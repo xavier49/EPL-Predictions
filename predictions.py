@@ -16,3 +16,5 @@ from dotenv import load_dotenv
 from scipy.stats import poisson
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+
+print("hello")
