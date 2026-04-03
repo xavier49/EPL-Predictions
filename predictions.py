@@ -47,5 +47,9 @@ matches = response.json()
 fixtures = pd.json_normalize(matches["matches"])
 print(fixtures[["utcDate", "homeTeam.name", "awayTeam.name", "score.fullTime.home", "score.fullTime.away"]].head(10))
 
+print(matches.keys())
+print(matches["filters"])
+print(matches["resultSet"])
 
-
+matches_played = matches["resultSet"]["played"]
+print(matches_played)
