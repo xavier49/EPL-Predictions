@@ -45,11 +45,15 @@ url = "https://api.football-data.org/v4/competitions/PL/matches"
 response = requests.get(url, headers=headers)
 matches = response.json()
 fixtures = pd.json_normalize(matches["matches"])
-print(fixtures[["utcDate", "homeTeam.name", "awayTeam.name", "score.fullTime.home", "score.fullTime.away"]].head(10))
 
-print(matches.keys())
-print(matches["filters"])
-print(matches["resultSet"])
+
+#print(matches.keys())
 
 matches_played = matches["resultSet"]["played"]
-print(matches_played)
+#print(matches_played)
+
+today = datetime.utcnow().date()
+season_end = today + timedelta(days=365)
+#print(fixtures.columns)
+fixtures_clean = pd.DataFrame(fixtures[fixtures["status"] == "TIMED"][["utcDate", "status", "homeTeam.name", "awayTeam.name"]].reset_index(drop=True))
+fixtures_clean.columns = ["Date", "status", "homeTeam", "awayTeam"]
