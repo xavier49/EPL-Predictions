@@ -82,3 +82,48 @@ past_fixtures_clean = pd.concat([past_fixtures_clean25, past_fixtures_clean24], 
 #applying weights to past fixtures based on recency
 df_played = past_fixtures_clean.sort_values(by = "utcDate")
 df_played["weight"] = np.linspace(1,2,len(df_played))
+
+#eventually will stratify this by team
+home_advantage = df_played["homeGoals"].mean()-df_played["awayGoals"].mean()
+print(home_advantage)
+
+teams = pd.unique(df_played[["homeTeam", "awayTeam"]].values.ravel("K"))
+attack = pd.Series(1.0, index = teams)
+defense = pd.Series(1.0, index = teams)
+
+
+team_stats = {}
+
+for team in teams:
+    home_games = df_played[df_played["homeTeam"] == team]
+    away_games = df_played[df_played["awayTeam"] == team]
+    
+    goals_scored = (home_games["homeGoals"]*home_games["weight"] + away_games["awayGoals"]*away_games["weight"])
+    goals_against = (home_games["awayGoals"]*home_games["weight"] + away_games["homeGoals"]*away_games["weight"])
+
+    matches = home_games["weight"].sum() + away_games["weight"].sum(0)
+    
+    team_stats[team] = {
+        "scored": goals_scored/matches,
+        "against": goals_against/matches
+        }
+
+leage_avg_score = (df_played["homeGoals"].mean() + df_played["awayGoals"].mean())/2
+print(leage_avg_score)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
