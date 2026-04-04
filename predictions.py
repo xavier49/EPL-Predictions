@@ -57,3 +57,28 @@ season_end = today + timedelta(days=365)
 #print(fixtures.columns)
 fixtures_clean = pd.DataFrame(fixtures[fixtures["status"] == "TIMED"][["utcDate", "status", "homeTeam.name", "awayTeam.name"]].reset_index(drop=True))
 fixtures_clean.columns = ["Date", "status", "homeTeam", "awayTeam"]
+
+
+#obtaining previous results
+params = {"season":2025, 
+          "status": "FINISHED"}
+response = requests.get(url, headers = headers, params = params)
+past_matches25 = response.json()
+past_fixtures25 = pd.json_normalize(past_matches25["matches"])
+past_fixtures_clean25 = past_fixtures25[["utcDate", "matchday", "status", "homeTeam.name", "awayTeam.name", "score.fullTime.home", "score.fullTime.away", "score.winner"]]
+past_fixtures_clean25.columns = ["utcDate", "matchday", "status", "homeTeam", "awayTeam", "homeGoals", "awayGoals", "result"]
+
+
+params = {"season":2024, 
+          "status": "FINISHED"}
+response = requests.get(url, headers = headers, params = params)
+past_matches24 = response.json()
+past_fixtures24 = pd.json_normalize(past_matches24["matches"])
+past_fixtures_clean24 = past_fixtures24[["utcDate", "matchday", "status", "homeTeam.name", "awayTeam.name", "score.fullTime.home", "score.fullTime.away", "score.winner"]]
+past_fixtures_clean24.columns = ["utcDate", "matchday", "status", "homeTeam", "awayTeam", "homeGoals", "awayGoals", "result"]
+
+past_fixtures_clean = pd.concat([past_fixtures_clean25, past_fixtures_clean24], axis = 0).reset_index(drop = True)
+
+#applying weights to past fixtures based on recency
+df_played = past_fixtures_clean.sort_values(by = "utcDate")
+df_played["weight"] = np.linspace(1,2,len(df_played))
