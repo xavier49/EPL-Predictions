@@ -83,13 +83,11 @@ past_fixtures_clean = pd.concat([past_fixtures_clean25, past_fixtures_clean24], 
 df_played = past_fixtures_clean.sort_values(by = "utcDate")
 df_played["weight"] = np.linspace(1,2,len(df_played))
 
-#eventually will stratify this by team
-home_advantage = df_played["homeGoals"].mean()-df_played["awayGoals"].mean()
+
 
 
 teams = pd.unique(df_played[["homeTeam", "awayTeam"]].values.ravel("K"))
-attack = pd.Series(1.0, index = teams)
-defense = pd.Series(1.0, index = teams)
+
 
 
 #vectorizing this operation
@@ -103,17 +101,41 @@ away = df_played.groupby("awayTeam").apply(lambda x: pd.Series({
     "goals_against": (x["homeGoals"]*x["weight"]).sum() / x["weight"].sum()
     }), include_groups = False)
 
-team_stats = pd.DataFrame((home + away) / 2)
+#team_stats = pd.DataFrame((home + away) / 2)
+team_stats = pd.concat([home, away], axis = 1)
+team_stats.columns = ["home_goals_scored", "home_goals_against", "away_goals_scored", "away_goals_against"]
 league_avg_score = (df_played["homeGoals"].mean() + df_played["awayGoals"].mean())/2
-team_stats["attack"] = team_stats["goals_scored"]/league_avg_score
-team_stats["defense"] = team_stats["goals_against"] / league_avg_score
+team_stats["home_attack"] = team_stats["home_goals_scored"]/league_avg_score
+team_stats["home_defense"] = team_stats["home_goals_against"] / league_avg_score
+team_stats["away_attack"] = team_stats["away_goals_scored"]/league_avg_score
+team_stats["away_defense"] = team_stats["away_goals_against"] / league_avg_score
 
-#def match_probs(home, away):
+
+def match_probs(home, away):
+    xg_home = league_avg_score*team_stats.loc[home]["home_attack"]*team_stats.loc[away]["away_defense"]
+    xg_away = league_avg_score*team_stats.loc[away]["away_attack"]*team_stats.loc[home]["home_defense"]
     
+    max_goals = 6
+    p_home = poisson.pmf(range(max_goals+1), xg_home)
+    p_away = poisson.pmf(range(max_goals+1), xg_away)
+    
+    prob_matrix = np.outer(p_home, p_away)
+    p_home_win = np.tril(prob_matrix, -1).sum()
+    p_draw = np.diag(prob_matrix).sum()
+    p_away_win = np.triu(prob_matrix, 1).sum()
+    
+    return p_home_win, p_draw, p_away_win
 
-
-
-
+def get_probs(row):
+    p_home_win, p_draw, p_away_win = match_probs(row["homeTeam"], row["awayTeam"])
+    return pd.Series({
+        "p_home_win": p_home_win,
+        "p_draw": p_draw,
+        "p_away_win": p_away_win
+        })
+fixture_probs = fixtures_clean.copy()
+fixture_probs[["p_home_win", "p_draw", "p_away_win"]] = fixtures_clean.apply(get_probs, axis=1)
+    
 
 
 
