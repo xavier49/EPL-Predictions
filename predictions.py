@@ -85,35 +85,31 @@ df_played["weight"] = np.linspace(1,2,len(df_played))
 
 #eventually will stratify this by team
 home_advantage = df_played["homeGoals"].mean()-df_played["awayGoals"].mean()
-print(home_advantage)
+
 
 teams = pd.unique(df_played[["homeTeam", "awayTeam"]].values.ravel("K"))
 attack = pd.Series(1.0, index = teams)
 defense = pd.Series(1.0, index = teams)
 
 
-team_stats = {}
+#vectorizing this operation
+#weighted averages for goals scored and against - recent games are more impactful
+home = df_played.groupby("homeTeam").apply(lambda x: pd.Series({
+    "goals_scored": (x["homeGoals"]*x["weight"]).sum() / x["weight"].sum(),
+    "goals_against": (x["awayGoals"]*x["weight"]).sum() / x["weight"].sum()
+    }), include_groups = False)
+away = df_played.groupby("awayTeam").apply(lambda x: pd.Series({
+    "goals_scored": (x["awayGoals"]*x["weight"]).sum() / x["weight"].sum(),
+    "goals_against": (x["homeGoals"]*x["weight"]).sum() / x["weight"].sum()
+    }), include_groups = False)
 
-for team in teams:
-    home_games = df_played[df_played["homeTeam"] == team]
-    away_games = df_played[df_played["awayTeam"] == team]
+team_stats = pd.DataFrame((home + away) / 2)
+league_avg_score = (df_played["homeGoals"].mean() + df_played["awayGoals"].mean())/2
+team_stats["attack"] = team_stats["goals_scored"]/league_avg_score
+team_stats["defense"] = team_stats["goals_against"] / league_avg_score
+
+#def match_probs(home, away):
     
-    goals_scored = (home_games["homeGoals"]*home_games["weight"] + away_games["awayGoals"]*away_games["weight"])
-    goals_against = (home_games["awayGoals"]*home_games["weight"] + away_games["homeGoals"]*away_games["weight"])
-
-    matches = home_games["weight"].sum() + away_games["weight"].sum(0)
-    
-    team_stats[team] = {
-        "scored": goals_scored/matches,
-        "against": goals_against/matches
-        }
-
-leage_avg_score = (df_played["homeGoals"].mean() + df_played["awayGoals"].mean())/2
-print(leage_avg_score)
-
-
-
-
 
 
 
