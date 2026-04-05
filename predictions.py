@@ -81,7 +81,7 @@ past_fixtures_clean = pd.concat([past_fixtures_clean25, past_fixtures_clean24], 
 
 #applying weights to past fixtures based on recency
 df_played = past_fixtures_clean.sort_values(by = "utcDate")
-df_played["weight"] = np.linspace(1,2,len(df_played))
+df_played["weight"] = np.linspace(1,2,len(df_played))**5
 
 
 
