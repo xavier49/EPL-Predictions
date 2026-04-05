@@ -81,7 +81,7 @@ past_fixtures_clean = pd.concat([past_fixtures_clean25, past_fixtures_clean24], 
 
 #applying weights to past fixtures based on recency
 df_played = past_fixtures_clean.sort_values(by = "utcDate")
-df_played["weight"] = np.linspace(1,2,len(df_played))**5
+df_played["weight"] = np.linspace(1,2,len(df_played))**3
 
 
 
@@ -115,7 +115,7 @@ def match_probs(home, away):
     xg_home = league_avg_score*team_stats.loc[home]["home_attack"]*team_stats.loc[away]["away_defense"]
     xg_away = league_avg_score*team_stats.loc[away]["away_attack"]*team_stats.loc[home]["home_defense"]
     
-    max_goals = 6
+    max_goals = 10
     p_home = poisson.pmf(range(max_goals+1), xg_home)
     p_away = poisson.pmf(range(max_goals+1), xg_away)
     
@@ -131,10 +131,11 @@ def get_probs(row):
     return pd.Series({
         "p_home_win": p_home_win,
         "p_draw": p_draw,
-        "p_away_win": p_away_win
+        "p_away_win": p_away_win,
+        "total_prob": p_home_win + p_draw + p_away_win
         })
 fixture_probs = fixtures_clean.copy()
-fixture_probs[["p_home_win", "p_draw", "p_away_win"]] = fixtures_clean.apply(get_probs, axis=1)
+fixture_probs[["p_home_win", "p_draw", "p_away_win", "total_prob"]] = fixtures_clean.apply(get_probs, axis=1)
     
 
 
